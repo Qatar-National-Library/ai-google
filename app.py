@@ -46,7 +46,7 @@ except Exception as e:
     documentai_client = None
 
 # --- Streamlit App Setup ---
-st.title("QNL Document/Q&A Chatbot")
+st.title("QNL - Talk to Google")
 
 # Initialize session state variables
 if 'chat_history' not in st.session_state:
