@@ -98,42 +98,31 @@ def get_generative_model_response(user_query, history, document_text=None):
     if model is None:
         return "Language model is not available."
 
-    # Prepare the prompt
-    # This is a basic way to include document text. For large documents,
-    # you'd need to retrieve relevant chunks using embeddings/vector search (RAG).
-    prompt_parts = []
+    # Build the chat history for the Gemini API
+    chat_history = []
 
+    # Add system message
+    system_message = (
+        "You are a helpful assistant. "
+        "If the question is not related to the document content, answer using your general knowledge. "
+        "Keep your answers concise and relevant."
+    )
+    chat_history.append({"role": "user", "parts": [system_message]})
+
+    # Add document context if available
     if document_text:
-        prompt_parts.append(f"The following is text from a document:\n{document_text}\n\n")
-        prompt_parts.append("Based on the document provided AND the conversation history, answer the following question:\n")
-    else:
-         prompt_parts.append("Based on the conversation history, answer the following question:\n")
+        doc_context = f"The following is text from a document:\n{document_text}\n"
+        chat_history.append({"role": "user", "parts": [doc_context]})
 
-
-    # Add conversation history to the prompt
-    # Format history for the model - Gemini expects a specific format
-    # This requires sending history as roles 'user' and 'model'
-    # Note: Direct chat history formatting might vary slightly based on the exact model/library version
-    # A common pattern is alternating user/model turns.
-    # For a simple prompt, we can just append, but for better results, use the chat feature if available.
-
-    # Using the chat method is generally better for conversational context
-    # Initialize a chat session with history if the model supports it
-    # For simplicity here, we'll pass history in the prompt text, but the model's chat feature is preferred.
-
-    # Let's simulate adding history to the prompt text for demonstration
+    # Add previous conversation history
     for turn in history:
-        prompt_parts.append(f"{turn['role'].capitalize()}: {turn['content']}\n")
+        chat_history.append({"role": turn["role"], "parts": [turn["content"]]})
 
-    prompt_parts.append(f"User: {user_query}\nModel:") # The model will generate the response for 'Model:'
-
-
-    full_prompt = "".join(prompt_parts)
+    # Add the current user query
+    chat_history.append({"role": "user", "parts": [user_query]})
 
     try:
-        # Use the generate_content method with the constructed prompt
-        response = model.generate_content(full_prompt)
-        # Access the text from the response
+        response = model.generate_content(chat_history)
         return response.text
     except Exception as e:
         st.error(f"Error getting response from Language Model: {e}")
